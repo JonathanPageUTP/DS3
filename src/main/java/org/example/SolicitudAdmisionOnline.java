@@ -132,11 +132,13 @@ public class SolicitudAdmisionOnline extends SolicitudAdmision {
         }
     }
 
-    public static void mostrarEstudiantes() {
+    public static void mostrarEstudiantes(String filtro) {
         try (Connection conn = DatabaseConnection.getConnection()) {
             String sql = "SELECT estudiante.id_estudiante, estudiante.nombre, solicitud_admision.estado FROM estudiante " +
-                    "JOIN solicitud_admision ON estudiante.id_estudiante = solicitud_admision.id_estudiante";
+                    "JOIN solicitud_admision ON estudiante.id_estudiante = solicitud_admision.id_estudiante " +
+                    "WHERE solicitud_admision.estado = ?";
             PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, filtro);
             ResultSet rs = pstmt.executeQuery();
             StringBuilder sb = new StringBuilder();
             while (rs.next()) {
@@ -159,7 +161,7 @@ public class SolicitudAdmisionOnline extends SolicitudAdmision {
 
     public static void main(String[] args) {
         while (true) {
-            String[] options = {"Crear nueva admisión", "Evaluar admisión", "Mostrar estudiantes", "Salir"};
+            String[] options = {"Crear nueva admisión", "Evaluar admisión", "Mostrar estudiantes (aceptados)", "Mostrar estudiantes (pendientes)", "Salir"};
             int choice = JOptionPane.showOptionDialog(null, "Seleccione una opción:", "Menú", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
             switch (choice) {
                 case 0:
@@ -191,9 +193,12 @@ public class SolicitudAdmisionOnline extends SolicitudAdmision {
                     }
                     break;
                 case 2:
-                    mostrarEstudiantes();
+                    mostrarEstudiantes("Aceptada");
                     break;
                 case 3:
+                    mostrarEstudiantes("Pendiente");
+                    break;
+                case 4:
                     System.exit(0);
                     break;
                 default:
