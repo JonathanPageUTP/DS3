@@ -132,9 +132,28 @@ public class SolicitudAdmisionOnline extends SolicitudAdmision {
         }
     }
 
+    public void pagarMatricula() {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            String montoPagoStr = JOptionPane.showInputDialog("Ingrese el monto del pago de matrícula:");
+            double montoPago = Double.parseDouble(montoPagoStr);
+
+            String sqlUpdate = "UPDATE estudiante SET pago = TRUE, monto_pago = ? WHERE id_estudiante = ?";
+            PreparedStatement pstmtUpdate = conn.prepareStatement(sqlUpdate);
+            pstmtUpdate.setDouble(1, montoPago);
+            pstmtUpdate.setString(2, estudiante.getIdEstudiante());
+            pstmtUpdate.executeUpdate();
+            JOptionPane.showMessageDialog(null, "Pago de matrícula realizado con éxito.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error al realizar el pago: " + e.getMessage());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Monto de pago inválido.");
+        }
+    }
+
     public static void mostrarEstudiantes(String filtro) {
         try (Connection conn = DatabaseConnection.getConnection()) {
-            String sql = "SELECT estudiante.id_estudiante, estudiante.nombre, solicitud_admision.estado FROM estudiante " +
+            String sql = "SELECT estudiante.id_estudiante, estudiante.nombre, solicitud_admision.estado, estudiante.monto_pago FROM estudiante " +
                     "JOIN solicitud_admision ON estudiante.id_estudiante = solicitud_admision.id_estudiante " +
                     "WHERE solicitud_admision.estado = ?";
             PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -145,6 +164,7 @@ public class SolicitudAdmisionOnline extends SolicitudAdmision {
                 sb.append("ID Estudiante: ").append(rs.getString("id_estudiante"))
                         .append("\nNombre: ").append(rs.getString("nombre"))
                         .append("\nEstado de Admisión: ").append(rs.getString("estado"))
+                        .append("\nMonto de Pago: ").append(rs.getDouble("monto_pago"))
                         .append("\n\n");
             }
             JTextArea textArea = new JTextArea(sb.toString());
@@ -161,7 +181,7 @@ public class SolicitudAdmisionOnline extends SolicitudAdmision {
 
     public static void main(String[] args) {
         while (true) {
-            String[] options = {"Crear nueva admisión", "Evaluar admisión", "Mostrar estudiantes (aceptados)", "Mostrar estudiantes (pendientes)", "Salir"};
+            String[] options = {"Crear nueva admisión", "Evaluar admisión", "Mostrar estudiantes (aceptados)", "Mostrar estudiantes (pendientes)", "Pagar matrícula", "Salir"};
             int choice = JOptionPane.showOptionDialog(null, "Seleccione una opción:", "Menú", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
             switch (choice) {
                 case 0:
@@ -199,6 +219,16 @@ public class SolicitudAdmisionOnline extends SolicitudAdmision {
                     mostrarEstudiantes("Pendiente");
                     break;
                 case 4:
+                    idEstudiante = JOptionPane.showInputDialog("Ingrese el ID del estudiante para pagar la matrícula:");
+                    estudiante = obtenerEstudiantePorId(idEstudiante);
+                    if (estudiante != null) {
+                        solicitud = new SolicitudAdmisionOnline(estudiante);
+                        solicitud.pagarMatricula();
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Estudiante no encontrado.");
+                    }
+                    break;
+                case 5:
                     System.exit(0);
                     break;
                 default:
